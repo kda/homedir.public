@@ -1,0 +1,470 @@
+#
+# .bashrc_common
+#
+
+# customize for my local favorites
+# but only if they aren't already there.
+if [[ ! "${PATH}" =~ "${HOME}/local/bin:" ]]
+then
+  export PATH=${HOME}/local/bin:${PATH}
+fi
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# Show the history the way I like it
+export HISTTIMEFORMAT='%F %T '
+
+
+# enable color support of ls and also add handy aliases
+if [[ -x /usr/bin/dircolors ]]
+then
+  test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+
+  export LS_COLOR_PARAMETER='--color=always'
+  alias grep='grep --color=auto --exclude=.viminfo'
+else
+  export LS_COLOR_PARAMETER=''
+fi
+
+export PAGER=less
+# no initialization (-X)
+# support color control sequences (-R)
+export LESS='-X -R'
+export EDITOR=vi
+
+#   Default to reporting stats on SCP
+export SSH_SCP_STATS=1
+export SSH_ALL_SCP_STATS=1
+
+#   Ignore these extensions when doing file completion
+export FIGNORE='.o:~'
+
+#   Make completion happen the first time
+set show-all-if-ambiguous On
+
+#   generalize some of the different OSes
+if [ "${OSTYPE}" = "linux-gnu" -o "${OSTYPE}" = "linux-gnueabihf" ]
+then
+  OSTYPE_GENERALIZED=linux
+elif [ "${OSTYPE:0:6}" = "darwin" ]
+then
+  OSTYPE_GENERALIZED=darwin
+else
+  OSTYPE_GENERALIZED=unknown
+  echo "unknown OSTYPE: ${OSTYPE}"
+fi
+export OSTYPE_GENERALIZED
+
+
+#alias vi='vim'
+
+alias m=gmake
+type gmake > /dev/null 2>&1
+if [ $? -ne 0 ]
+then
+  alias m=make
+fi
+
+alias n=ninja
+
+alias les=less
+alias lesss=less
+alias l=less
+alias ls='ls -CF ${LS_COLOR_PARAMETER}'
+alias la='ls -al ${LS_COLOR_PARAMETER}'
+alias ll='ls -alrt ${LS_COLOR_PARAMETER}'
+alias laft='ls -al --full-time ${LS_COLOR_PARAMETER}'
+alias lah='ls -alh ${LS_COLOR_PARAMETER}'
+alias llft='ls -alrt --full-time ${LS_COLOR_PARAMETER}'
+alias llh='ls -alrth ${LS_COLOR_PARAMETER}'
+alias df='df -h'
+alias lwhich='lw'
+
+function lw()
+{
+  if [[ -z "${1}" ]]
+  then
+    echo "Usage: ${FUNCNAME[0]} <executable>"
+    return
+  fi
+  #local -r filename=$(which "${1}")
+  less $(which ${1})
+}
+
+function vlw()
+{
+  if [[ -z "${1}" ]]
+  then
+    echo "Usage: ${FUNCNAME[0]} <executable>"
+    return
+  fi
+  #local -r filename=$(which "${1}")
+  vless $(which ${1})
+}
+
+function vw()
+{
+  if [[ -z "${1}" ]]
+  then
+    echo "Usage: ${FUNCNAME[0]} <executable>"
+    return
+  fi
+  #local -r filename=$(which "${1}")
+  vi $(which ${1})
+}
+
+function llw()
+{
+  if [[ -z "${1}" ]]
+  then
+    echo "Usage: ${FUNCNAME[0]} <executable>"
+    return
+  fi
+  #local -r filename=$(which "${1}")
+  ls -l $(which ${1})
+}
+
+# vim's less
+VIMRUNTIME=$(vim -e -T dumb --cmd 'exe "set t_cm=\<C-M>"|echo $VIMRUNTIME|quit' | tr -d '\015' )
+[[ -z $VIMRUNTIME ]] && { echo 'Sorry, $VIMRUNTIME was not found' >&2; exit 1; }
+alias vless='${VIMRUNTIME}/macros/less.sh'
+
+alias vb='pushd ${HOME};vi ${HOME}/.bashrc; popd'
+alias vba='pushd ${HOME};vi ${HOME}/.bash_aliases; popd'
+alias vbc='pushd ${HOME};vi ${HOME}/.bashrc_common; popd'
+alias vv='pushd ${HOME};vi ${HOME}/.vimrc; popd'
+alias vprio='pushd ${HOME};vi ${HOME}/gtd/priorities.txt;popd'
+alias vtodo='pushd ${HOME};vi ${HOME}/gtd/todo.txt;popd'
+alias sb='source ~/.bashrc'
+
+alias showa='alias | less'
+alias h='history | less +G'
+alias calc='calctool'
+
+#alias gtd='pushd ${HOME}/gtd;vi;popd'
+#alias kl='pushd ${HOME}/gtd/klog;vi $(date +"%Y.%W.txt");popd'
+#alias ff='pushd ${HOME}/gtd/ff;vi;popd'
+#alias epi='pushd ${HOME}/epistle;vi;popd'
+#function j()
+#{
+#  pushd ${HOME}/gtd/journal
+#  journaltimestamp=`date +"%Y%W"`
+#  touch ${journaltimestamp}journal.txt
+#  vi ${journaltimestamp}journal.txt
+#  popd
+#}
+
+# SSH - BEGIN
+alias sadl='ssh-add -l'
+alias sadL='ssh-add -L'
+alias sadd='ssh-add -D'
+
+function sad()
+{
+  SSH_KEY_FILE=${HOME}/.ssh/id_rsa
+  if [[ ! -r ${SSH_KEY_FILE} ]]
+  then
+    echo "WARNING: key file does not exist (${SSH_KEY_FILE})"
+  else
+    ssh-add -l | awk '{print $2;}' | grep $(ssh-keygen -lf ${SSH_KEY_FILE} | awk '{print $2}')
+    if [[ $? -ne 0 ]]
+    then
+      ssh-add
+    fi
+  fi
+  ssh-add -l
+}
+alias fixssh='source ${HOME}/tmp/fixssh'
+# SSH - END
+
+TMUX_BASH_SOURCE="${HOME}/local/bin/tmux.bash"
+alias vtb='pushd ${HOME};vi ${TMUX_BASH_SOURCE};popd'
+alias vbtm='pushd ${HOME}; vi ${TMUX_BASH_SOURCE};popd'
+alias vtmb='pushd ${HOME}; vi ${TMUX_BASH_SOURCE};popd'
+if [[ -f "${TMUX_BASH_SOURCE}" ]]
+then
+  source ${TMUX_BASH_SOURCE}
+else
+  echo "ERROR: missing ${TMUX_BASH_SOURCE}"
+fi
+
+LLVM_REPOSITORY='git@github.com:/llvm/llvm-project.git'
+alias crtmll='createNewTmuxCodingSessionForGitRepo ${LLVM_REPOSITORY}'
+alias ctmll='createTmuxCodingSessionForGitRepo ${LLVM_REPOSITORY}'
+LLVM_ZORG_REPOSITORY='git@github.com:/llvm/llvm-zorg.git'
+alias crtmlz='createNewTmuxCodingSessionForGitRepo ${LLVM_ZORG_REPOSITORY}'
+alias ctmlz='createTmuxCodingSessionForGitRepo ${LLVM_ZORG_REPOSITORY}'
+GCALCLI_REPOSITORY='https://github.com/insanum/gcalcli.git'
+alias crtmgcal='createNewTmuxCodingSessionForGitRepo ${GCALCLI_REPOSITORY}'
+alias ctmgcal='createTmuxCodingSessionForGitRepo ${GCALCLI_REPOSITORY}'
+HOMEDIR_REPOSITORY='git@github.com:kda/homedir.git'
+alias crtmhd='createNewTmuxCodingSessionForGitRepo ${HOMEDIR_REPOSITORY}'
+alias ctmhd='createTmuxCodingSessionForGitRepo ${HOMEDIR_REPOSITORY}'
+PICLOCK_REPOSITORY='git@github.com:kda/pi-led-clock'
+alias crtmpc='createNewTmuxCodingSessionForGitRepo ${PICLOCK_REPOSITORY} picl'
+alias ctmpc='createTmuxCodingSessionForGitRepo ${PICLOCK_REPOSITORY} picl'
+
+alias chd='cd ${HOME}/src/hd/homedir'
+
+# SVN
+function svnks()
+{
+  svn propset svn:keywords "HeadURL Revision Date Author Id" "$@"
+}
+function svnksg()
+{
+  svn propget svn:keywords "$@"
+}
+
+
+# enable autocomplete for aliases
+function __ensure_complete_alias()
+{
+  if [[ ! -d ${HOME}/.complete_alias/.git ]]
+  then
+    git clone https://github.com/cykerway/complete-alias.git ${HOME}/.complete_alias
+  fi
+}
+__ensure_complete_alias
+COMPLETE_ALIAS_SRC=${HOME}/.complete_alias/complete_alias
+source ${COMPLETE_ALIAS_SRC}
+
+# Git shortcuts
+alias gits='git status -s'
+alias gitb='git branch --list -vv'
+#alias gitr='git remote -v'
+#alias gfa='git fetch --all'
+#alias gcah='git commit --amend -C HEAD'
+alias gaa='git add -A'
+alias gitl='GIT_PAGER="less '"'+/^commit '"'" git log --stat --pretty=fuller'
+alias glk='GIT_PAGER="less '"'+/^commit '"'" git log --stat --pretty=fuller --author="<kda@"'
+alias gitcl='git log --stat -1 | head -3'
+alias gitlp='git log --stat -p'
+alias gdc='GIT_PAGER="less '"'+/^diff '"'" git diff --cached'
+complete -F _complete_alias gdc
+alias gds='GIT_PAGER="less '"'+/^diff '"'" git diff --staged'
+complete -F _complete_alias gds
+alias gd='GIT_PAGER="less '"'+/^diff '"'" git diff'
+complete -F _complete_alias gd
+alias gco='git checkout'
+complete -F _complete_alias gco
+alias gcm='git commit -m'
+alias gdt='git difftool'
+complete -F _complete_alias gdt
+alias vgch='vimGitCommit HEAD'
+alias vgc='vimGitCommit'
+
+function vimGitCommit()
+{
+  if [ -z "$1" ]
+  then
+    echo "Usage: ${FUNCNAME[0]} <commit_id>"
+    return
+  fi
+
+  vim $(git diff-tree --no-commit-id --name-only -r ${1})
+}
+
+alias vgm='vimGitModified'
+
+function vimGitModified()
+{
+  vim $(git diff --name-only HEAD)
+}
+
+# superps: grep PS smartly
+function sps()
+{
+  if [ -z "$1" ]
+  then
+    echo "Usage: ${FUNCNAME[0]} <name>"
+    return
+  fi
+
+  #    ps -auxwwh | head -1
+  local psargs='auxww'
+  if [ "${OSTYPE_GENERALIZED}" == "linux" ]
+  then
+    psargs='aux'
+  fi
+  ps ${psargs} | grep --color=always "$1" | grep -v grep
+}
+export -f sps
+
+
+# check on version regardless of VCS system
+function upd()
+{
+  if [ -d ./CVS ]
+  then
+    cvs -q -n update -AdP
+  else
+    if [ -d ./.svn ]
+    then
+      svn st -u
+    fi
+  fi
+}
+
+# check on my version regardless of VCS system
+function kupd()
+{
+  if [ -d ./CVS ]
+  then
+    cvs -q -n update -AdP 2>&1 | egrep -v "^(U|\?|cvs)"
+  else
+    if [ -d ./.svn ]
+    then
+      svn st -u | egrep -v "^(\?| +\*|Status)"
+    fi
+  fi
+}
+
+SUPERHISTORY_BASH_SOURCE="${HOME}/local/bin/superhistory.bash"
+alias vbh='pushd ${HOME};vi ${SUPERHISTORY_BASH_SOURCE};popd'
+if [[ -f "${SUPERHISTORY_BASH_SOURCE}" ]]
+then
+  source ${SUPERHISTORY_BASH_SOURCE}
+else
+  echo "ERROR: missing ${SUPERHISTORY_BASH_SOURCE}"
+fi
+
+# If set, and Readline is being used, Bash will not attempt to search the PATH
+# for possible completions when completion is attempted on an empty line.
+shopt -s no_empty_cmd_completion
+
+# include dot files in filename expansion
+shopt -s dotglob
+
+# common directories
+alias cdb='cd ${HOME}/Dropbox'
+alias cdbhd='cd ${HOME}/Dropbox/homedir'
+alias cdbp='cd ${HOME}/Dropbox/programming'
+
+# time conversion
+function epoch()
+{
+  if [ -z "$1" ]
+  then
+    echo "Usage: ${FUNCNAME[0]} <epoch_(milli|micro|)seconds>"
+    return
+  fi
+  sometime="${1//,/}"
+  #echo "sometime=${sometime}"
+  format="%F %T"
+  result=$(date +"${format}" -d @${sometime})
+  #echo $result
+  #echo ${result%%-*}
+  if [[ ${result%%-*} -gt 2100 ]]
+  then
+    seconds=$(( ${sometime} / 1000 ))
+    milliseconds=$(( ${sometime} % 1000 ))
+    result=$(date +"${format}" -d @$seconds)
+    #echo $result
+    #echo ${result%%-*}
+    if [[ ${result%%-*} -gt 2100 ]]
+    then
+      seconds=$(( ${sometime} / 1000000 ))
+      milliseconds=$(( (${sometime} / 1000) % 1000 ))
+      microseconds=$(( ${sometime} % 1000 ))
+      result=$(date +"${format}" -d @$seconds)
+      echo $result $(printf "%03d %03d" $milliseconds $microseconds)
+    else
+      echo $result $(printf "%03d" $milliseconds)
+    fi
+  else
+    echo $result
+  fi
+}
+
+# Don't look for remote 'git checkout' completions remotely
+# Must occur before '. /etc/bash_completion'
+export GIT_COMPLETION_CHECKOUT_NO_GUESS=0
+
+# BEGIN 2021-05-24 - removed
+## GOPATH
+#export GOPATH=${HOME}/Dropbox/programming/go
+# END 2021-05-24 - removed
+
+alias pi4='ping -c 4'
+
+# prevent move on top of something
+alias mv='mv -i'
+alias cp='cp -i'
+
+alias sysc='systemctl'
+complete -F _complete_alias sysc
+
+# Home IT quick review
+alias lhit='less ~/Dropbox/homedir/raspberrypi/etc/hosts'
+
+# spin up local aliases
+if [[ -f ${HOME}/.bash_aliases ]]
+then
+  source ~/.bash_aliases
+else
+  echo "ERROR: missing ${HOME}/.bash_aliases"
+fi
+
+# control ninja a bit
+if [[ $(nproc) > 1 ]]
+then
+  nproc_for_ninja=$(( $(nproc) * 3 / 4 ))
+  loadlimit_for_ninja=$(( $(nproc) * 3 / 4 ))
+  export NINJA_EXTRA_ARGS="-j${nproc_for_ninja} -l${loadlimit_for_ninja}"
+  nworkers_for_lit=$(( $(nproc) * 9 / 10 ))
+  export LIT_OPTS="-j${nworkers_for_lit}"
+fi
+
+# ensure tmux-plugins is ready to go
+function __ensure_tpm()
+{
+  if [[ ! -d ${HOME}/.tmux/plugins/tpm/.git ]]
+  then
+    git clone git@github.com:tmux-plugins/tpm.git ${HOME}/.tmux/plugins/tpm
+  fi
+}
+__ensure_tpm
+
+function __update_tpm()
+{
+  __ensure_tpm
+  ${HOME}/.tmux/plugins/tpm/bindings/update_plugins
+}
+
+# ensure vundle is ready to go
+function __ensure_vundle()
+{
+  if [[ ! -d ${HOME}/.vim/bundle/Vundle.vim/.git ]]
+  then
+    git clone https://github.com/VundleVim/Vundle.vim.git ${HOME}/.vim/bundle/Vundle.vim
+  fi
+}
+__ensure_vundle
+
+function __update_vundle()
+{
+  __ensure_vundle
+  vim +PluginUpdate +qall
+}
+
+# Awesome alias (because bindings disappear) (???)
+alias awelyu='echo "local awful = require(\"awful\")awful.layout.inc( 1)" | awesome-client'
+
+# is a reboot required?
+if [[ -f /var/run/reboot-required ]]
+then
+  echo "Reboot Required!"
+  if [[ "${0:0:1}" == "-" ]]
+  then
+    REBOOT_REQUIRED_PACKAGES='/var/run/reboot-required.pkgs'
+    if [[ -f "${REBOOT_REQUIRED_PACKAGES}" ]]
+    then
+      cat /var/run/reboot-required.pkgs
+    else
+      echo "unknown reason (${REBOOT_REQUIRED_PACKAGES} missing)"
+    fi
+  fi
+fi
